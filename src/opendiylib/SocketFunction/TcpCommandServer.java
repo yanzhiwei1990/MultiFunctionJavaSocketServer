@@ -28,6 +28,7 @@ public class TcpCommandServer extends AbstractTcpSocketServer {
 		// TODO Auto-generated method stub
 		mTcpCommandReceiver = new TcpCommandReceiver(socket);
 		TcpCommandServer.this.addReceiver(mTcpCommandReceiver);
+		mTcpCommandReceiver.onConnect();
 		mTcpCommandReceiver.start();
 	}
 
