@@ -18,6 +18,8 @@ public abstract class AbstractTcpSocketReceiver implements Runnable {
 	protected InetAddress addr;
 	protected DataInputStream in;
 	protected DataOutputStream out;
+	protected byte[] databuffer;
+	protected int datacount = 0;
 	private boolean runFlag;
 
 	public AbstractTcpSocketReceiver(Socket socket) {
@@ -38,16 +40,17 @@ public abstract class AbstractTcpSocketReceiver implements Runnable {
 		runFlag = false;
 		try {
 			socket.shutdownInput();
-			in.close();
+			//in.close();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
 
-	public boolean send(String s) {
+	public boolean sendString(String s) {
 		if (out != null) {
 			try {
-				out.writeUTF(s);
+				//out.writeUTF(s);
+				out.writeBytes(s);
 				out.flush();
 				return true;
 			} catch (Exception e) {
@@ -57,9 +60,36 @@ public abstract class AbstractTcpSocketReceiver implements Runnable {
 		return false;
 	}
 
+	public boolean sendBytes(byte[] buffer) {
+		if (out != null) {
+			try {
+				out.write(buffer);
+				out.flush();
+				return true;
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+		return false;
+	}
+	
+	public boolean sendBytesByLength(byte[] buffer, int length) {
+		if (out != null) {
+			try {
+				out.write(buffer, 0, length);
+				out.flush();
+				return true;
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+		return false;
+	}
+	
 	@Override
 	public void run() {
 		try {
+			databuffer = new byte[8192];
 			in = new DataInputStream(this.socket.getInputStream());
 			out = new DataOutputStream(this.socket.getOutputStream());
 		} catch (IOException e) {
@@ -68,13 +98,13 @@ public abstract class AbstractTcpSocketReceiver implements Runnable {
 		}
 		while (runFlag) {
 			try {
-				System.out.println("run start read");
-				final int s = in.read();
-				if (s != -1) {
-					System.out.println("run read over");
-					this.onReceive(String.format("%c", s));
+				//System.out.println("run start read");
+				datacount = in.read(databuffer);
+				if (datacount != -1) {
+					//System.out.println("run read over");
+					this.onReceive(databuffer, datacount);
 				} else {
-					System.out.println("run read exit");
+					System.out.println(addr + " Disconnect");
 					break;
 				}
 			} catch (IOException e) {
@@ -82,23 +112,40 @@ public abstract class AbstractTcpSocketReceiver implements Runnable {
 				runFlag = false;
 			}
 		}
+		runFlag = false;
 		try {
-			runFlag = false;
-			in.close();
-			out.close();
-			socket.close();
-			in = null;
-			out = null;
-			socket = null;
+			if (in != null) {
+				in.close();
+			}
 		} catch (IOException e) {
 			e.printStackTrace();
+		} finally {
+			in = null;
+		}
+		try {
+			if (out != null) {
+				out.close();
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		} finally {
+			out = null;
+		}
+		try {
+			if (socket != null) {
+				socket.close();
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		} finally {
+			socket = null;
 		}
 		this.onDisconnect();
 	}
 
 	public abstract void onConnect();
 	
-	public abstract void onReceive(String s);
+	public abstract void onReceive(byte[] buf, int length);
 
 	public abstract void onDisconnect();
 }

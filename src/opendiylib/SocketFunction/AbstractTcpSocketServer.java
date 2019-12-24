@@ -35,6 +35,7 @@ public abstract class AbstractTcpSocketServer implements Runnable {
 	private ServerSocket mServerSocket = null;
 	private String mServerAddress = null;
 	private List<AbstractTcpSocketReceiver> clients = new ArrayList<AbstractTcpSocketReceiver>();
+	private Object mLock = new Object();
 
 	public AbstractTcpSocketServer(int port) {
 		this.mPort = port;
@@ -78,7 +79,6 @@ public abstract class AbstractTcpSocketServer implements Runnable {
 					//timeout.printStackTrace();
 					continue;
 				} catch (IOException e) {
-					//System.out.println("accept IOException " + e.getMessage());
 					e.printStackTrace();
 					this.onConnectFailed();
 				}
@@ -86,11 +86,8 @@ public abstract class AbstractTcpSocketServer implements Runnable {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+		clearClients();
 		try {
-			for (AbstractTcpSocketReceiver client : clients) {
-				client.stop();
-			}
-			clients.clear();
 			mServerSocket.close();
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -103,24 +100,29 @@ public abstract class AbstractTcpSocketServer implements Runnable {
 	}
 
 	protected void addReceiver(AbstractTcpSocketReceiver receiver) {
-		clients.add(receiver);
-		//this.onConnect(receiver);
+		synchronized (mLock) {
+			clients.add(receiver);
+		}
 	}
 	
 	protected void removeReceiver(AbstractTcpSocketReceiver receiver) {
-		clients.remove(receiver);
-		//this.onDisconnect(receiver);
+		synchronized (mLock) {
+			clients.remove(receiver);
+		}
 	}
 	
-	//public abstract void onConnect(AbstractTcpSocketReceiver client);
+	private void clearClients() {
+		synchronized (mLock) {
+			for (AbstractTcpSocketReceiver client : clients) {
+				client.stop();
+			}
+			clients.clear();
+		}
+	}
 	
 	public abstract void onStartReceiver(Socket socket);
 
 	public abstract void onConnectFailed();
-
-	/*public abstract void onReceive(AbstractTcpSocketReceiver client, String s);
-
-	public abstract void onDisconnect(AbstractTcpSocketReceiver client);*/
 
 	public abstract void onServerStop();
 }

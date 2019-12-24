@@ -3,7 +3,7 @@ package opendiylib.Main;
 import java.util.Scanner;
 
 import opendiylib.CommonUtils.LogUtils;
-import opendiylib.SocketFunction.TcpCommandServer;
+import opendiylib.SocketFunction.CommonTcpServer;
 
 public class MainManager {
 
@@ -33,7 +33,7 @@ public class MainManager {
 
 	}
 	
-	private TcpCommandServer mTcpCommandServer = new TcpCommandServer(19999);
+	private CommonTcpServer mCommonTcpServer = new CommonTcpServer(19991);
 	
 	public void startMain(boolean restart) {
 		LogUtils.LOGD(TAG, "startMain");
@@ -41,7 +41,7 @@ public class MainManager {
 			startListenCommand();
 		}
 		//add function
-		mTcpCommandServer.startServer();
+		mCommonTcpServer.startServer();
 	}
 	
 	public void stopMain(boolean restart) {
@@ -50,13 +50,16 @@ public class MainManager {
 			stopListenCommand();
 		}
 		//add release function
-		mTcpCommandServer.stopServer();
+		mCommonTcpServer.stopServer();
 	}
 	
 	public void restartMain() {
 		LogUtils.LOGD(TAG, "restartMain");
-		stopMain(true);
-		startMain(true);
+		if (!mListenCommand) {
+			LogUtils.LOGD(TAG, "restartMain scanner closed and can't restart");
+			return;
+		}
+		mCommonTcpServer.restartServer();
 	}
 	
 	private void startListenCommand() {
