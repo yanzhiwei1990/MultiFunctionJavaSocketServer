@@ -39,6 +39,7 @@ public abstract class AbstractTcpSocketServer implements Runnable {
 
 	public AbstractTcpSocketServer(int port) {
 		this.mPort = port;
+		this.mServerAddress = HostAddressUtils.getLocalIp4Address();
 	}
 
 	public void startServer() {
@@ -46,7 +47,7 @@ public abstract class AbstractTcpSocketServer implements Runnable {
 			LogUtils.LOGD(TAG, "startServer running already");
 			return;
 		} else {
-			LogUtils.LOGD(TAG, "startServer");
+			LogUtils.LOGD(TAG, "startServer " + mServerAddress + ":" + mPort);
 			mRunFlag = true;
 			new Thread(this).start();
 		}
@@ -68,7 +69,6 @@ public abstract class AbstractTcpSocketServer implements Runnable {
 		try {
 			mServerSocket = new ServerSocket();
 			mServerSocket.setReuseAddress(true);
-			mServerAddress = HostAddressUtils.getLocalIp4Address();
 			mServerSocket.bind(new InetSocketAddress(mServerAddress, mPort));
 			mServerSocket.setSoTimeout(1000);
 			while (mRunFlag) {
@@ -124,5 +124,7 @@ public abstract class AbstractTcpSocketServer implements Runnable {
 
 	public abstract void onConnectFailed();
 
+	public abstract void onServerStart(ServerSocket serverSocket);
+	
 	public abstract void onServerStop();
 }
