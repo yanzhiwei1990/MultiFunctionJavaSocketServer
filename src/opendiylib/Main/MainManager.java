@@ -33,7 +33,7 @@ public class MainManager {
 
 	}
 	
-	private CommonTcpServer mCommonTcpServer = new CommonTcpServer(19991);
+	private CommonTcpServer mCommonTcpServer = new CommonTcpServer(19999);
 	
 	public void startMain(boolean restart) {
 		LogUtils.LOGD(TAG, "startMain");

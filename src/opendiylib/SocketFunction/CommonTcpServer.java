@@ -4,6 +4,8 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Arrays;
 
+import org.omg.CORBA.INTERNAL;
+
 import opendiylib.CommonUtils.LogUtils;
 
 public class CommonTcpServer extends AbstractTcpSocketServer {
@@ -60,12 +62,21 @@ public class CommonTcpServer extends AbstractTcpSocketServer {
 		@Override
 		public void onReceive(byte[] buffer, int length) {
 			// TODO Auto-generated method stub
-			if (mCommonDataParse.dealData(buffer, length) == 1) {
-				printReceiverInfo(this, "onReceive: parse over=" + mCommonDataParse.getClientInfomation().getHead());
-				sendBytesByLength(mCommonDataParse.getClientInfomation().getBuffer(), mCommonDataParse.getClientInfomation().getReceiveTotalNumber());
+			int result = mCommonDataParse.dealData(buffer, length);
+			if (result == 2) {
+				printReceiverInfo(this, "onReceive: parse over=" + mCommonDataParse.getClientInfomation().getPacketHead());
+				sendString("receive extra data = " + (mCommonDataParse.getClientInfomation().getReceiveTotalNumber() - 100 - mCommonDataParse.getClientInfomation().getDataNumber()));
 				mCommonDataParse.initClientInformation();
-			} else {
+			} else if (result == 1) {
+				printReceiverInfo(this, "onReceive: parse over=" + mCommonDataParse.getClientInfomation().getPacketHead());
+				//sendBytesByLength(mCommonDataParse.getClientInfomation().getBuffer(), mCommonDataParse.getClientInfomation().getReceiveTotalNumber());
+				sendString("receive data = " + mCommonDataParse.getClientInfomation().getPacketHead());
+				mCommonDataParse.initClientInformation();
+			} else if (result == 0) {
 				printReceiverInfo(this, "onReceive: parse continue");
+			} else {
+				printReceiverInfo(this, "onReceive: parse stop");
+				mCommonDataParse.initClientInformation();
 			}
 		}
 
@@ -107,34 +118,54 @@ public class CommonTcpServer extends AbstractTcpSocketServer {
 				String head = null;
 				if (mCommonClientInfoMation.mReceiveTotalNumber < 100) {
 					LogUtils.LOGD(TAG, "dealData 100 bytes head not available " + mCommonClientInfoMation.mReceiveTotalNumber);
+					status = -1;
 				} else if (length >= 100) {
 					LogUtils.LOGD(TAG, "dealData 100 bytes head available " + mCommonClientInfoMation.mReceiveTotalNumber);
-					if (mCommonClientInfoMation.mHead == null) {
-						mCommonClientInfoMation.mHead = new String(mCommonClientInfoMation.mBuffer, 0, 100);//6
-						mCommonClientInfoMation.mName = new String(mCommonClientInfoMation.mBuffer, 6, 26);//20
-						mCommonClientInfoMation.mId = new String(mCommonClientInfoMation.mBuffer, 26, 46);//20
-						mCommonClientInfoMation.mCommand = new String(mCommonClientInfoMation.mBuffer, 46, 66);//20
-						mCommonClientInfoMation.mData = new String(mCommonClientInfoMation.mBuffer, 66, 86);//20
-						int num1 = mCommonClientInfoMation.mBuffer[86];
-						int num2 = mCommonClientInfoMation.mBuffer[87];
-						int num3 = mCommonClientInfoMation.mBuffer[88];
-						int num4 = mCommonClientInfoMation.mBuffer[89];
-						int num5 = mCommonClientInfoMation.mBuffer[90];
-						int num6 = mCommonClientInfoMation.mBuffer[91];
-						int num7 = mCommonClientInfoMation.mBuffer[92];
-						int num8 = mCommonClientInfoMation.mBuffer[93];
-						byte[] temp = new byte[8];
-						System.arraycopy(mCommonClientInfoMation.mBuffer, 86, temp, 0, 8);
-						LogUtils.LOGD(TAG, "dealData array = " + Arrays.toString(temp ));
+					if (mCommonClientInfoMation.mPacketHead == null) {
+						mCommonClientInfoMation.mPacketHead = new String(mCommonClientInfoMation.mBuffer, 0, 100);//all head
+						mCommonClientInfoMation.mHead = new String(mCommonClientInfoMation.mBuffer, 0, 6);//6
+						mCommonClientInfoMation.mName = new String(mCommonClientInfoMation.mBuffer, 6, 20);//20
+						mCommonClientInfoMation.mId = new String(mCommonClientInfoMation.mBuffer, 26, 20);//20
+						mCommonClientInfoMation.mCommand = new String(mCommonClientInfoMation.mBuffer, 46, 20);//20
+						mCommonClientInfoMation.mData = new String(mCommonClientInfoMation.mBuffer, 66, 20);//20
+						int num1 = Byte.toUnsignedInt(mCommonClientInfoMation.mBuffer[86]);
+						int num2 = Byte.toUnsignedInt(mCommonClientInfoMation.mBuffer[87]);
+						int num3 = Byte.toUnsignedInt(mCommonClientInfoMation.mBuffer[88]);
+						int num4 = Byte.toUnsignedInt(mCommonClientInfoMation.mBuffer[89]);
+						int num5 = Byte.toUnsignedInt(mCommonClientInfoMation.mBuffer[90]);
+						int num6 = Byte.toUnsignedInt(mCommonClientInfoMation.mBuffer[91]);
+						int num7 = Byte.toUnsignedInt(mCommonClientInfoMation.mBuffer[92]);
+						int num8 = Byte.toUnsignedInt(mCommonClientInfoMation.mBuffer[93]);
+						//86~93
+						int[] checkArray = new int[4];
+						boolean checkResult = true;
 						for (int i = 86; i < 94; i++) {
-							LogUtils.LOGD(TAG, "dealData check i = " + i + ":"+ Integer.toHexString(0xFF & mCommonClientInfoMation.mBuffer[i]));
+							LogUtils.LOGD(TAG, "dealData check i = " + i + ":"+ Integer.toHexString(Byte.toUnsignedInt(mCommonClientInfoMation.mBuffer[i])));
+							if (i >= 86 && i <= 89) {
+								checkArray[i - 86] = Byte.toUnsignedInt(mCommonClientInfoMation.mBuffer[i]) + Byte.toUnsignedInt(mCommonClientInfoMation.mBuffer[i + 4]);
+								if (checkArray[i - 86] != 255 && checkResult) {
+									checkResult = false;
+								}
+							}
 						}
-						LogUtils.LOGD(TAG, "dealData check number 1 = " + (num1 + num5) + ", number 2 = " + (num2 + num6) + ", number 3 = " + (num3 + num7) + ", number 4 = " + (num4 + num8));
-						mCommonClientInfoMation.mDataNumber = num1 * 256 * 256 * 256 + num2 * 256 * 256 + num3 * 256 + num4;//8
+						mCommonClientInfoMation.mTail = new String(mCommonClientInfoMation.mBuffer, 94, 6);//6
+						LogUtils.LOGD(TAG, "dealData checkResult = " + checkResult + ", array = " + Arrays.toString(checkArray) + " ,mHead=" + mCommonClientInfoMation.mHead +  ", mTail=" + mCommonClientInfoMation.mTail);
+						//LogUtils.LOGD(TAG, "dealData check number 1 = " + (num1 + num5) + ", number 2 = " + (num2 + num6) + ", number 3 = " + (num3 + num7) + ", number 4 = " + (num4 + num8));
+						if (checkResult && "^head#".equals(mCommonClientInfoMation.mHead) && "#tail$".equals(mCommonClientInfoMation.mTail)) {
+							mCommonClientInfoMation.mDataNumber = num1 * 256 * 256 * 256 + num2 * 256 * 256 + num3 * 256 + num4;//8
+							LogUtils.LOGD(TAG, "dealData mDataNumber = " + mCommonClientInfoMation.mDataNumber);
+						} else {
+							return -1;
+						}
 					}
+					status = 0;
 					if (mCommonClientInfoMation.mDataNumber == mCommonClientInfoMation.mReceiveTotalNumber - 100) {
 						LogUtils.LOGD(TAG, "dealData one packet data over");
 						status = 1;
+						mDealOver = true;
+					} else if (mCommonClientInfoMation.mDataNumber < mCommonClientInfoMation.mReceiveTotalNumber - 100) {
+						LogUtils.LOGD(TAG, "dealData one packet data over and receive extra data");
+						status = 2;
 						mDealOver = true;
 					}
 				}
@@ -152,17 +183,23 @@ public class CommonTcpServer extends AbstractTcpSocketServer {
 	}
 	
 	public class CommonClientInfoMation {
+		private String mPacketHead = null;
 		private String mHead = null;
+		private String mTail = null;
 		private String mName = null;
 		private String mId = null;
 		private String mCommand = null;
 		private String mData = null;
 		private int mDataNumber = 0;
 		private int mReceiveTotalNumber = 0;
-		private byte[] mBuffer = new byte[10240];
+		private byte[] mBuffer = new byte[1024 * 1024];
 		
 		public CommonClientInfoMation() {
 			// TODO Auto-generated constructor stub
+		}
+		
+		public String getPacketHead() {
+			return mPacketHead;
 		}
 		
 		public String getHead() {
@@ -183,6 +220,10 @@ public class CommonTcpServer extends AbstractTcpSocketServer {
 		
 		public String getData() {
 			return mData;
+		}
+		
+		public int getDataNumber() {
+			return mDataNumber;
 		}
 		
 		public byte[] getDtaBuffer() {

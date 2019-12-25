@@ -89,7 +89,7 @@ public abstract class AbstractTcpSocketReceiver implements Runnable {
 	@Override
 	public void run() {
 		try {
-			databuffer = new byte[8192];
+			databuffer = new byte[1024 * 1024];
 			in = new DataInputStream(this.socket.getInputStream());
 			out = new DataOutputStream(this.socket.getOutputStream());
 		} catch (IOException e) {
