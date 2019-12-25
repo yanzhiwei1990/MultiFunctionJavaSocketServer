@@ -4,8 +4,6 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Arrays;
 
-import org.omg.CORBA.INTERNAL;
-
 import opendiylib.CommonUtils.LogUtils;
 
 public class CommonTcpServer extends AbstractTcpSocketServer {
@@ -45,7 +43,7 @@ public class CommonTcpServer extends AbstractTcpSocketServer {
 		LogUtils.LOGD(TAG, "--------onServerStop--------");
 	}
 	
-	private class TcpCommonReceiver extends AbstractTcpSocketReceiver {
+	public class TcpCommonReceiver extends AbstractTcpSocketReceiver {
 
 		private CommonDataParse mCommonDataParse = new CommonDataParse();
 		
@@ -242,5 +240,9 @@ public class CommonTcpServer extends AbstractTcpSocketServer {
 		public int getReceiveTotalNumber() {
 			return mReceiveTotalNumber;
 		}
+	}
+	
+	public interface CommonServerCallback {
+		
 	}
 }

@@ -31,6 +31,10 @@ public abstract class AbstractTcpSocketReceiver implements Runnable {
 		return addr;
 	}
 
+	public Socket getSocket() {
+		return socket;
+	}
+	
 	public void start() {
 		runFlag = true;
 		new Thread(this).start();
