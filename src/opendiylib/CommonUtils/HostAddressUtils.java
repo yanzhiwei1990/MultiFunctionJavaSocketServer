@@ -30,7 +30,9 @@ public class HostAddressUtils {
 			while (netInterfaces.hasMoreElements()) {
 				netInterfacesCount++;
 				NetworkInterface netInterface = netInterfaces.nextElement();
-				LogUtils.LOGD(TAG , "printAllAddress NetworkInterface " + netInterfacesCount + " = " + netInterface);
+				if (DEBUG) {
+					LogUtils.LOGD(TAG , "printAllAddress NetworkInterface " + netInterfacesCount + " = " + netInterface);
+				}
 				Enumeration<InetAddress> netAddresses = netInterface.getInetAddresses();
 				netAddressCount = 0;
 				while (netAddresses.hasMoreElements()) {
@@ -110,7 +112,9 @@ public class HostAddressUtils {
 	    if (socket != null) {
 	    	socket.close();
 	    }
-	    LogUtils.LOGD(TAG , "getIpBySocket result = " + result);
+	    if (DEBUG) {
+	    	LogUtils.LOGD(TAG , "getIpBySocket result = " + result);
+	    }
 	    return result;
 	}
 	
@@ -128,7 +132,9 @@ public class HostAddressUtils {
 	    } else {
 	    	result = ipByNi.get(0).getHostAddress();
 	    }
-	    LogUtils.LOGD(TAG , "getLocalIp4Address result = " + result);
+	    if (DEBUG) {
+	    	LogUtils.LOGD(TAG , "getLocalIp4Address result = " + result);
+	    }
 	    return result;
 	}
 }

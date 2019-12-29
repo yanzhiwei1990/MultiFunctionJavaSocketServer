@@ -1,22 +1,15 @@
 package opendiylib.SocketFunction;
 
 import java.io.IOException;
-import java.net.DatagramSocket;
-import java.net.Inet4Address;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.NetworkInterface;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.List;
 
 import opendiylib.CommonUtils.HostAddressUtils;
 import opendiylib.CommonUtils.LogUtils;
-import opendiylib.Main.MainManager;
 
 /**
  * AbstractTcpSocketServer
@@ -56,12 +49,26 @@ public abstract class AbstractTcpSocketServer implements Runnable {
 	public void stopServer() {
 		LogUtils.LOGD(TAG, "stopServer");
 		mRunFlag = false;
+		try {
+			if (mServerSocket != null) {
+				mServerSocket.close();
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 
 	public void restartServer() {
 		LogUtils.LOGD(TAG, "restartServer");
 		mReconnect = true;
 		mRunFlag = false;
+		try {
+			if (mServerSocket != null) {
+				mServerSocket.close();
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 	
 	@Override
@@ -70,7 +77,7 @@ public abstract class AbstractTcpSocketServer implements Runnable {
 			mServerSocket = new ServerSocket();
 			mServerSocket.setReuseAddress(true);
 			mServerSocket.bind(new InetSocketAddress(mServerAddress, mPort));
-			mServerSocket.setSoTimeout(1000);
+			mServerSocket.setSoTimeout(5000);
 			while (mRunFlag) {
 				try {
 					final Socket socket = mServerSocket.accept();
@@ -88,7 +95,9 @@ public abstract class AbstractTcpSocketServer implements Runnable {
 		}
 		clearClients();
 		try {
-			mServerSocket.close();
+			if (mServerSocket != null) {
+				mServerSocket.close();
+			}
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

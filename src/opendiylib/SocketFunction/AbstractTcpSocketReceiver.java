@@ -43,8 +43,16 @@ public abstract class AbstractTcpSocketReceiver implements Runnable {
 	public void stop() {
 		runFlag = false;
 		try {
-			socket.shutdownInput();
-			//in.close();
+			if (socket != null) {
+				socket.shutdownInput();
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		try {
+			if (socket != null) {
+				socket.shutdownOutput();
+			}
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
